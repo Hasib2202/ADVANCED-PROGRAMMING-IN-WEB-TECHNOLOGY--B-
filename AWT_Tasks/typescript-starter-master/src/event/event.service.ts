@@ -1,10 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { CoorDto, EventDto } from "./event.dto";
+import { CoorDto, EventDto, loginDto } from "./event.dto";
 import { CoorEntity, EventEntity } from "./event.entity";
 import { CreateEventDto } from "./event.dto";
 import { Repository, } from "typeorm";
 import { InjectRepository, } from "@nestjs/typeorm";
 import { VolunteerEntity } from "src/volunteer/volunteer.entity";
+import * as bcrypt from 'bcrypt';
+import { promises } from "dns";
 @Injectable()
 export class EventService {
 
@@ -49,7 +51,10 @@ export class EventService {
         return { message : 'Id :'+ id + ' Deleted'}
     }
 
-    addEvent(myobj : EventDto): Promise <EventEntity>{
+    async addEvent(myobj : EventDto): Promise <EventEntity>{
+        const salt = await bcrypt.genSalt();
+        const hashedPassword = await bcrypt.hash(myobj.password,salt);
+        myobj.password = hashedPassword;
         return this.eventRepo.save(myobj);
     }
 
@@ -143,6 +148,20 @@ export class EventService {
                 }
             }
         });
-}
+    }
+
+    async login(myobj:loginDto) : Promise<boolean> {
+        const pass = await this.eventRepo.findOneBy({username:myobj.username});
+        if(pass) {
+            const isMatch = await bcrypt.compare(myobj.password,pass.password);
+            if(isMatch){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+    }
+
 
 }

@@ -8,18 +8,22 @@ import {
   Post,
   Put,
   Query,
+  Session,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { EventService } from './event.service';
-import { CoorDto, EventDto, EventUpdateDto } from './event.dto';
+import { CoorDto, EventDto, EventUpdateDto, loginDto } from './event.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MulterError, diskStorage } from 'multer';
 import { CoorEntity, EventEntity } from './event.entity';
 import { VolunteerEntity } from 'src/volunteer/volunteer.entity';
 import { promises } from 'dns';
+import * as session from 'express-session';
+import { SessionGuard } from './event.guard';
 
 @Controller('event')
 export class EventController {
@@ -32,8 +36,10 @@ export class EventController {
   }
 
   @Get('get/:id')
-  getEventByIdp(@Param('id', ParseIntPipe) id: number): object {
+  @UseGuards(SessionGuard)
+  getEventByIdp(@Param('id', ParseIntPipe) id: number, @Session() session): object {
     // console.log(typeof id);
+    console.log(session.user);
     return this.eventService.getEventByIdp(id);
   }
 
@@ -81,6 +87,7 @@ export class EventController {
   //   console.log(data);
   //   return this.eventService.addCoor(data);
   // }
+  
   @Post('addevent')
   @UsePipes(new ValidationPipe()) // Apply the validation
   addEvent(@Body() data: EventDto): Promise<EventEntity> {
@@ -187,6 +194,15 @@ export class EventController {
   getAllVolunteerWithEventId(): Promise<VolunteerEntity[]> {
     // console.log(myobj);
     return this.eventService.getAllVolunteerWithEventId();
+  }
+
+  @Post('login')
+  async login(@Body() myobj : loginDto, @Session() session ) : Promise<any> {
+    const res =  await this.eventService.login(myobj);
+    if (res==true) {
+      session.user=myobj.username;
+    }
+    return this.eventService.login(myobj);
   }
 
 

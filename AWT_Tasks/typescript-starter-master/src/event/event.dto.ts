@@ -45,6 +45,12 @@ export class CoorDto {
   @IsUrl({}, { message: 'Social media link must be a valid URL' })
   socialMediaLink: string;
 }
+
+export class loginDto {
+  @IsNotEmpty() username: string;
+  @IsNotEmpty() password: string; 
+}
+
 export class EventUpdateDto {
   @IsEmail()
   'username': string;
